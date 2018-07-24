@@ -2,7 +2,7 @@
   "name": "typescript-deep-dive",
   "version": "0.0.1",
   "description": "Learn TS from TypeScript deep dive book",
-  "main": "index.js",
+  "main": "app.js",
   "author": "Cedric Chee",
   "license": "MIT",
   "private": true,
