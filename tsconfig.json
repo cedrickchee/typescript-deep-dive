@@ -5,7 +5,8 @@
         "sourceMap": true,
         "outDir": "client/build",
         // "outFile": "client/build/app.js",
-        "downlevelIteration": true
+        "downlevelIteration": true,
+        "noLib": false
     },
     "exclude": [
         "node_modules"
