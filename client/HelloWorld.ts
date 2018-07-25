@@ -1590,6 +1590,805 @@
 
 // Basic Annotations
 
+// The following example demonstrates type annotations for variables, function
+// parameters and function return values:
+// var num: number = 123;
+// function identity(num: number): number {
+//     return num;
+// }
 
+// Primitive Types
+// The JavaScript primitive types are well represented in the TypeScript type system.
+// This means string, number, boolean as demonstrated below:
+// var num: number;
+// var str: string;
+// var bool: boolean;
+
+// num = 123;
+// num = 123.456;
+// num = '123'; // Error
+
+// str = '123';
+// str = 123; // Error
+
+// bool = true;
+// bool = false;
+// bool = 'false'; // Error
+
+// Arrays
+// var boolArray: boolean[];
+// boolArray = [true, false];
+// console.log(boolArray[0]);
+// console.log(boolArray.length);
+// boolArray[1] = true;
+// boolArray[0] = 'false'; // Error!
+// boolArray = 'false'; // Error!
+// boolArray = [true, 'false']; // Error!
+
+// Interfaces
+// Interfaces are the core way in TypeScript to compose multiple type annotations
+// into a single named annotation. Consider the following example:
+// interface Name {
+//     first: string;
+//     second: string;
+// }
+
+// var fullName: Name;
+// fullName = {
+//     first: 'John',
+//     second: 'Doe'
+// };
+// console.log(fullName);
+
+// fullName = {
+//     first: 'David'
+// }
+// fullName = {
+//     first: 'David',
+//     second: 81
+// }
+
+// Inline Type Annotation
+// var user: {
+//     firstName: string;
+//     lastName: string;
+//     age: number;
+// };
+
+// user = {
+//     firstName: 'John',
+//     lastName: 'Doe',
+//     age: 20
+// };
+// console.log(user);
+// Inline types are great for quickly providing a one off type annotation for something.
+// It saves you the hassle of coming up with (a potentially bad) type name. However,
+// if you find yourself putting in the same type annotation inline multiple times
+// it's a good idea to consider refactoring it into an interface (or a type alias
+// covered later in this section).
+
+// Special Types
+// Beyond the primitive types that have been covered there are a few types that have
+// special meaning in TypeScript. These are any, null, undefined, void.
+
+// any
+// The any type holds a special place in the TypeScript type system. It gives you an
+// escape hatch from the type system to tell the compiler to bugger off. any is
+// compatible with any and all types in the type system. This means that anything can
+// be assigned to it and it can be assigned to anything. This is demonstrated in the
+// example below:
+// var power: any;
+
+// // Takes any and all types
+// power = 123;
+// power = '123';
+// Is compatible with all types
+// var num: number;
+// power = num;
+// num = power;
+
+// If you are porting JavaScript code to TypeScript, you are going to be close friends
+// with any in the beginning.
+
+// null and undefined
+// The null and undefined JavaScript literals are effectively treated by the type system
+// the same as something of type any. These literals can be assigned to any other type.
+// This is demonstrated in the below example:
+// var num: number;
+// var str: string;
+
+// These literals can be assigned to anything
+// num = null;
+// str = undefined;
+
+// :void
+// Use :void to signify that a function does not have a return type:
+// function log(message): void {
+//     console.log(message);
+// }
+
+// Generics
+
+// Many algorithms and data structures in computer science do not depend on the
+// actual type of the object.
+// function reverse<T>(items: T[]): T[] {
+//     var toreturn: T[] = [];
+//     for (let i = items.length - 1; i >= 0; i--) {
+//         toreturn.push(items[i]);
+//     }
+//     return toreturn;
+// }
+
+// var sample: number[] = [1, 2, 3];
+// var reversed = reverse(sample);
+// console.log(reversed);
+// // Safety!
+// reversed[0] = '1';     // Error!
+// reversed = ['1', '2']; // Error!
+// console.log(reversed);
+
+// reversed[0] = 1;       // Okay
+// reversed = [1, 2];     // Okay
+
+// Because the reverse function returns items of the same type as it takes,
+// TypeScript knows the reversed variable is also of type number[] and will give you
+// Type safety.
+// var numArr = [1, 2];
+// var reversedNums = numArr.reverse();
+
+// reversedNums = ['1', '2']; // Error!
+
+// Union Type
+// Quite commonly in JavaScript you want to allow a property to be one of multiple
+// types e.g. a string or a number. This is where the union type (denoted by | in a type
+// annotation e.g. string|number) comes in handy. A common use case is a function that
+// can take a single object or an array of the object e.g.:
+// function formatCommandLine(command: string[]|string) {
+//     var line = '';
+//     if (typeof command === 'string') {
+//         line = command.trim();
+//     } else {
+//         line = command.join(' ').trim();
+//     }
+
+//     // do stuff with line: string
+//     return line;
+// }
+
+// console.log(formatCommandLine('run '));
+// console.log(formatCommandLine(['run ', 'ls', 'top ']));
+
+// Intersection Type
+// extend is a very common pattern in JavaScript where you take two objects and
+// create a new one that has the features of both these objects. An Intersection Type
+// allows you to use this pattern in a safe way as demonstrated below:
+
+// function extend<T, U>(first: T, second: U): T & U {
+//   let result = <T & U>{};
+//   for (let id in first) {
+//     result[id] = first[id];
+//   }
+//   for (let id in second) {
+//     if (!result.hasOwnProperty(id)) {
+//       result[id] = second[id];
+//     }
+//   }
+//   return result;
+// }
+
+// var x = extend({ a: 'hello' }, { b: 42 });
+
+// // x now has both `a` and `b`
+// var a = x.a;
+// var b = x.b;
+// console.log(a, b);
+
+// Tuple Type
+// JavaScript doesn't have first class tuple support. People generally just use an
+// array as a tuple. This is exactly what the TypeScript type system supports.
+// Tuples can be annotated using :[typeofmember1, typeofmember2] etc. A tuple can have
+// any number of members. Tuples are demonstrated in the below example:
+
+// var nameNumber: [string, number];
+
+// // Okay
+// nameNumber = ['Jonh', 12345678];
+// // Error!
+// nameNumber = ['Jenny', '867-5309'];
+
+// Combine this with the destructuring support in TypeScript, tuples feel fairly
+// first class despite being arrays underneath:
+// var nameNumber: [string, number];
+// nameNumber = ['Jenny', 8675309];
+
+// var [nm, num] = nameNumber;
+// console.log(nm, num);
+
+// Type Alias
+// TypeScript provides convenient syntax for providing names for type annotations that
+// you would like to use in more than one place. The aliases are created using the type
+// SomeName = someValidTypeAnnotation syntax. An example is demonstrated below:
+
+// type StrOrNum = string|number;
+
+// // Usage: just like any other notation
+// var sample: StrOrNum;
+// sample = 123;
+// sample = '123';
+
+// // Just checking
+// sample = true; // Error!
+
+// Unlike an interface you can give a type alias to literally any type annotation
+// (useful for stuff like union and intersection types). Here are a few more examples
+// to make you familiar with the syntax:
+
+// type Txt = string | { text: string };
+// type Coords = [number, number];
+// type Callback = (data: string) => void;
+// TIP: If you need to have hierarchies of Type annotations use an interface.
+// They can be used with implements and extends
+
+// TIP: Use a type alias for simpler object structures (like Coordinates) just to
+// give them a semantic name. Also when you want to give semantic names to
+// Union or Intersection types, a Type alias is the way to go.
+
+// ----------------------------------------------------------------------------------------
+
+// Migrating From JavaScript
+// Note that all JavaScript is valid TypeScript.
+
+// Suppressing Errors
+// var foo = 123;
+// var bar = 'hey';
+
+// bar = foo as any; // Okay!
+
+// In other places you might want to annotate something as any e.g.:
+// function foo(): any {
+//   return 1;
+// }
+// var bar = 'hey';
+// bar = foo(); // ERROR: cannot assign a number to a string
+
+// Note: Suppressing errors is dangerous, but it allows you to take notice of errors
+// in your new TypeScript code. You might want to leave // TODO: comments as you go along.**
+
+// Third Party JavaScript
+// You can change your JavaScript to TypeScript, but you can't change the whole world to
+// use TypeScript. This is where TypeScript's ambient definition support comes in.
+// In the beginning we recommend you create a vendor.d.ts (the .d.ts extension specifies
+// the fact that this is a declaration file) and start adding dirty stuff to it.
+// Alternatively create a file specific for the library e.g. jquery.d.ts for jquery.
+
+// $('aa');
+
+// you now know how to overcome any JavaScript -> TypeScript friction quickly when
+// using third party JavaScript.
+
+// Third Party NPM modules
+// import * as $ from 'jquery';
+// $('el');
+
+// External non js resources
+// You can even allow import of any file e.g. .css files (if you are using something
+// like webpack style loaders or css modules) with a simple * style declaration (ideally
+// in a globals.d.ts file):
+
+// Now people can
+// import * as foo from "./some/file.css";
+
+// @types
+// Definitely Typed is definitely one of TypeScript's greatest strengths.
+// The community has effectively gone ahead and documented the nature of nearly
+// 90% of the top JavaScript projects out there.
+
+// Using @types
+// Installation is fairly simple as it just works on top of npm. So as an example you
+// can install type definitions for jquery simply as:
+
+// Global @types
+// By default any definitions that support global consumption are included
+// automatically. E.g. for jquery you should be able to just start using $ globally
+// in your project.
+//
+// However for libraries (like jquery) I generally recommend using modules:
+
+// Module @types
+// After installation, no special configuration is required really. You just use it
+// like a module e.g.:
+// import * as $ from "jquery";
+// Use $ at will in this module :)
+
+// Controlling Globals
+// As can be seen, having a definition that allows global leak-in automatically can
+// be a problem for some teams. So you can choose to explicitly only bring in the types
+// that make sense using the tsconfig.json compilerOptions.types e.g.:
+
+// {
+//   "compilerOptions": {
+//       "types" : [
+//           "jquery"
+//       ]
+//   }
+// }
+
+// ----------------------------------------------------------------------------------------
+
+// Ambient Declarations
+
+// Ambient declarations allow you to safely use existing popular JavaScript libraries
+// and incrementally migrate your JavaScript/CoffeeScript/Other-Compile-To-Js-Language
+// project to TypeScript.
+
+// Studying patterns in ambient declarations for third party JavaScript code is
+// good practice for annotating your TypeScript code base as well. This is why we
+// present it so early on.
+
+// Declaration file
+// You can tell TypeScript that you are trying to describe code that exists
+// elsewhere (e.g. written in JavaScript/CoffeeScript/The runtime environment like
+// the browser or Node.js) using the declare keyword. As a quick example:
+
+// foo = 123; // Error: `foo` is not defined
+
+// ----------------------------------------------------------------------------------------
+
+// Variables
+// This allows you to use the process variable without TypeScript complaining:
+// process.exit()
+
+// ----------------------------------------------------------------------------------------
+
+// Interfaces
+// Interfaces have zero runtime JS impact. There is a lot of power in TypeScript
+// interfaces to declare the structure of variables.
+
+// The following two are equivalent declarations, the first uses an inline annotation,
+// the second uses an interface:
+
+// // Sample A
+// declare var myPoint: { x: number; y: number; };
+
+// // Sample B
+// interface Point {
+//     x: number; y: number;
+// }
+// declare var myPoint: Point;
+
+// However the beauty of Sample B is that if someone authors a library that builds
+// on the myPoint library to add new members, they can easily add to the existing
+// declaration of myPoint:
+
+// // Lib a.d.ts
+// interface Point {
+//   x: number; y: number;
+// }
+// declare var myPoint: Point;
+
+// // Lib b.d.ts
+// interface Point {
+//   z: number;
+// }
+
+// // Your code
+// var point3Dz = myPoint.z; // Allowed!
+
+// This is because interfaces in TypeScript are open ended. This is a vital tenet
+// of TypeScript that it allows you to mimic the extensibility of JavaScript using
+// interfaces.
+
+// Classes can implement interfaces
+// If you want to use classes that must follow an object structure that someone
+// declared for you in an interface you can use the implements keyword to ensure
+// compatibility:
+// interface Point {
+//   x: number;
+//   y: number;
+// }
+
+// class MyPoint implements Point {
+//   x: number;
+//   y: number;
+// }
+
+// Basically in the presence of that implements, any changes in that external Point
+// interface will result in a compile error in your code base so you can easily keep
+// it in sync:
+
+// interface Point {
+//   x: number;
+//   y: number;
+// }
+
+// class MyPoint implements Point {
+//   x: number;
+//   y: number;
+// }
+
+// var foo: Point = new MyPoint();
+
+// Not every interface is implementable easily
+// Interfaces are designed to declare any arbitrarily crazy structure that might be
+// present in JavaScript.
+
+// Consider the following interface where something is callable with new:
+// interface Crazy {
+//   new (): {
+//       hello: number
+//   };
+// }
+
+// class CrazyClass implements Crazy {
+//   constructor() {
+//       return { hello: 123 };
+//   }
+// }
+
+// // Because
+// const crazy = new CrazyClass(); // crazy would be {hello:123}
+// console.log(crazy);
+
+// You can declare all the crazy JS out there with interfaces and even use them safely
+// from TypeScript. Doesn't mean you can use TypeScript classes to implement them.
+
+// ----------------------------------------------------------------------------------------
+
+// Enums
+// An enum is a way to organize a collection of related values. Many other programming
+// languages (C/C#/Java) have an enum data type but JavaScript does not. However
+// TypeScript does. Here is an example definition of a TypeScript enum:
+// enum CardSuit {
+//   Clubs,
+//   Diamonds,
+//   Hearts,
+//   Spades
+// }
+
+// // Sample usage
+// var card = CardSuit.Diamonds;
+// console.log(card);
+
+// // Safety
+// card = "not a member of card suit"; // Error : string is not assignable to type `CardSuit`
+
+// Number Enums and Numbers
+// TypeScript enums are number based.
+// enum Color {
+//   Red,
+//   Green,
+//   Blue
+// }
+// var col = Color.Red;
+// col = 0 // Effectively same as Color.Red
+// console.log(col);
+
+// Number Enums and Strings
+// enum Tristate {
+//   False,
+//   True,
+//   Unknown
+// }
+// console.log(Tristate[0]);
+// console.log(Tristate['False']);
+// console.log(Tristate[Tristate.False]);
+
+// Changing the number associated with a Number Enum
+// By default enums are 0 based and then each subsequent value increments by 1
+// automatically. As an example consider the following:
+// enum Color {
+//   Red,     // 0
+//   Green,   // 1
+//   Blue     // 2
+// }
+
+// enum Color {
+//   DarkRed = 3,
+//   DarkGreen,
+//   DarkBlue
+// }
+
+// var col = Color.DarkGreen;
+// console.log(col);
+
+// Number Enums as flags
+// One excellent use of enums is the ability to use enums as Flags. Flags allow you to
+// check if a certain condition from a set of conditions is true.
+// Consider the following example where we have a set of properties about animals:
+// enum AnimalFlags {
+//   None = 0,
+//   HasClaws = 1 << 0,
+//   CanFly = 1 << 1,
+//   EatsFish = 1 << 2,
+//   Endangered = 1 << 3
+// }
+
+// Here we are using the left shift operator to move 1 around a certain level of bits to
+// come up with bitwise disjoint numbers 0001, 0010, 0100 and 1000 (these are decimals
+// 1,2,4,8 if you are curious). The bitwise operators | (or) / & (and) / ~ (not) are your best friends when working with flags and are demonstrated below:
+
+// enum AnimalFlags {
+//   None           = 0,
+//   HasClaws       = 1 << 0,
+//   CanFly         = 1 << 1,
+// }
+
+// function printAnimalAbilities(animal) {
+//   var animalFlags = animal.flags;
+//   if (animalFlags & AnimalFlags.HasClaws) {
+//     console.log('animal has claws');
+//   }
+//   if (animalFlags & AnimalFlags.CanFly) {
+//     console.log('animal can fly');
+//   }
+//   if (animalFlags == AnimalFlags.None) {
+//     console.log('nothing');
+//   }
+// }
+
+// var animal = { flags: AnimalFlags.None };
+// printAnimalAbilities(animal); // nothing
+// animal.flags |= AnimalFlags.HasClaws;
+// printAnimalAbilities(animal);
+// animal.flags &= ~AnimalFlags.HasClaws;
+// printAnimalAbilities(animal); // nothing
+// animal.flags |= AnimalFlags.HasClaws | AnimalFlags.CanFly;
+// printAnimalAbilities(animal); // animal has claws, animal can fly
+
+// enum AnimalFlags {
+//   None           = 0,
+//   HasClaws       = 1 << 0,
+//   CanFly         = 1 << 1,
+//   EatsFish       = 1 << 2,
+//   Endangered     = 1 << 3,
+
+//   EndangeredFlyingClawedFishEating = HasClaws | CanFly | EatsFish | Endangered,
+// }
+
+// String Enums
+// We've only looked at enums where the member values are numbers. You are actually
+// allowed to have enum members with string values as well. e.g.
+// export enum EvidenceTypeEnum {
+//   UNKNOWN = '',
+//   PASSPORT_VISA = 'passport_visa',
+//   PASSPORT = 'passport',
+//   SIGHTED_STUDENT_CARD = 'sighted_tertiary_edu_id',
+//   SIGHTED_KEYPASS_CARD = 'sighted_keypass_card',
+//   SIGHTED_PROOF_OF_AGE_CARD = 'sighted_proof_of_age_card'
+// }
+
+// // You can use these values to do simple string comparisons. e.g.
+// // Where `someStringFromBackend` will be '' | 'passport_visa' | 'passport' ... etc.
+// const someStringFromBackend = 'sighted_keypass_card';
+// const value = someStringFromBackend as EvidenceTypeEnum;
+
+// // Sample use in code
+// if (value === EvidenceTypeEnum.PASSPORT_VISA) {
+//   console.log('you provided a passport');
+//   console.log(value); // passport
+// }
+// if (value === EvidenceTypeEnum.SIGHTED_KEYPASS_CARD) {
+//   console.log('you provided a keycard');
+//   console.log(value); // sighted_keypass_card
+// }
+
+// Const Enums
+// If you have an enum definition like the following:
+// const enum Tristate {
+//   False,
+//   True,
+//   Unknown
+// }
+
+// var lie = Tristate.False;
+
+// Enum with static functions
+// You can use the declaration enum + namespace merging to add static methods to an enum.
+// The following demonstrates an example where we add a static member isBusinessDay
+//  to an enum Weekday:
+// enum Weekday {
+//   Monday,
+//   Tuesday,
+//   Wednesday,
+//   Thursday,
+//   Friday,
+//   Saturday,
+//   Sunday
+// }
+
+// namespace Weekday {
+//   export function isBusinessDay(day: Weekday) {
+//     switch (day) {
+//       case Weekday.Saturday:
+//       case Weekday.Sunday:
+//         return false;
+
+//       default:
+//         return true;
+//     }
+//   }
+// }
+
+// const mon = Weekday.Monday;
+// const sun = Weekday.Sunday;
+// console.log(Weekday.isBusinessDay(mon));
+// console.log(Weekday.isBusinessDay(sun));
+
+// Enums are open ended
+
+// ----------------------------------------------------------------------------------------
+
+// lib.d.ts
+
+// A special declaration file lib.d.ts ships with every installation of TypeScript.
+// This file contains the ambient declarations for various common JavaScript constructs
+// present in JavaScript runtimes and the DOM.
+
+// Example Usage
+// var foo = 123;
+// var bar = foo.toString();
+// console.log(bar);
+
+// lib.d.ts Inside Look
+
+// Modifying Native Types
+// window.helloWorld = () => console.log('hello world');
+
+// window.helloWorld();
+// window.helloWorld('gracias');
+
+// Example string redux
+// We recommended creating a global.d.ts for maintainability reasons. However you can
+// break into the global namespace from within a file module if you desire so.
+// This is done using declare global { /*global namespace here*/ }.
+
+// Using your own custom lib.d.ts
+
+// Compiler target effect on lib.d.ts
+
+// tsconfig.json
+// My Personal Recommendation:
+// "compilerOptions": {
+//   "target": "es5",
+//   "lib": ["es6", "dom"]
+// }
+
+// Polyfill for old JavaScript engines
+// There are quite a few runtime features that are like Map / Set and even
+// Promise (this list will of course change over time) that you can use with modern
+// lib options. To use these all you need to do is use core-js.
+// Simply install: npm install core-js --save-dev
+
+// ----------------------------------------------------------------------------------------
+
+// Functions
+// The TypeScript type system pays a lot of love to functions, after all they are the
+// core building blocks of a composable system.
+
+// Parameter annotations
+
+// Optional Parameters
+// function foo(bar: number, bas: string = 'hello') {
+//   console.log(bar, bas);
+// }
+
+// foo(123);           // 123, hello
+// foo(123, 'world');  // 123, world
+
+// Overloading
+// TypeScript allows you to declare function overloads. This is useful for
+// documentation + type safety purpose. Consider the following code:
+// function padding(a: number, b?: number, c?: number, d?: any) {
+//   if (b === undefined && c === undefined && d === undefined) {
+//     b = c = d = a;
+//   } else if (c === undefined && d === undefined) {
+//     c = a;
+//     d = b;
+//   }
+//   return {
+//     top: a,
+//     right: b,
+//     bottom: c,
+//     left: d
+//   };
+// }
+
+// If you look at the code carefully you realize the meaning of a,b,c,d changes based
+// on how many arguments are passed in. Also the function only expects 1, 2 or 4 arguments.
+
+// These constraints can be enforced and documented using function overloading.
+// You just declare the function header multiple times. The last function header is
+// the one that is actually active within the function body but is not available to
+// the outside world.
+// function padding(all: number);
+// function padding(topAndBottom: number, leftAndRight: number);
+// function padding(top: number, right: number, bottom: number, left: number);
+// function padding(a: number, b?: number, c?: number, d?: number) {
+//   if (b === undefined && c === undefined && d === undefined) {
+//     b = c = d = a;
+//   } else if (c === undefined && d === undefined) {
+//     c = a;
+//     d = b;
+//   }
+//   return {
+//     top: a,
+//     right: b,
+//     bottom: c,
+//     left: d
+//   };
+// }
+
+// Here the first three function headers are available as valid calls to padding:
+// let padAll = padding(1);
+// console.log(padAll);
+// let padOppSide = padding(2, 3);
+// console.log(padOppSide);
+// let padSide = padding(4, 5, 6, 7);
+// console.log(padSide);
+
+// ----------------------------------------------------------------------------------------
+
+// Callable
+
+// You can annotate callables as a part of a type or an interface as follows
+// interface ReturnString {
+//   (): string
+// }
+
+// An instance of such an interface would be a function that returns a string e.g.
+// declare const foo: ReturnString;
+// const bar = foo(); // bar is inferred as a string
+
+// Obvious examples
+// Of course such a callable annotation can also specify any arguments / optional
+// arguments / rest arguments as needed. e.g. here is a complex example:
+// interface Complex {
+//   (foo: string, bar?: number, ...others: boolean[]): number;
+// }
+
+// An interface can provide multiple callable annotations to specify function overloading.
+// For example:
+// interface Overloaded {
+//   (foo: string): string
+//   (foo: number): number
+// }
+
+// // example implementation
+// function stringOrNumber(foo: number): number;
+// function stringOrNumber(foo: string): string;
+// function stringOrNumber(foo: any): any {
+//     if (typeof foo === 'number') {
+//         return foo * foo;
+//     } else if (typeof foo === 'string') {
+//         return `hello ${foo}`;
+//     }
+// }
+
+// const overloaded: Overloaded = stringOrNumber;
+
+// // example usage
+// const str = overloaded('john');
+// console.log(str);
+// const num = overloaded(42);
+// console.log(num);
+
+// Arrow Syntax
+// To make it easy to specify callable signatures, TypeScript also allows simple
+// arrow type annotations. For example, a function that takes a number and returns a
+// string can be annotated as:
+// const simple: (foo: number) => string
+//   = (foo) => foo.toString();
+// Only limitation of the arrow syntax: You can't specify overloads.
+// For overloads you must use the full bodied { (someArgs): someReturn } syntax.
+
+// Newable
+// Newable is just a special type of callable type annotation with the prefix new.
+// It simply means that you need to invoke with new e.g.
+// interface CallMeWithNewToGetString {
+//   new(): string
+// }
+// // Usage
+// declare const Foo: CallMeWithNewToGetString;
+// const bar = new Foo(); // bar is inferred to be of type string
 
 // ----------------------------------------------------------------------------------------
