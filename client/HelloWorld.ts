@@ -2392,3 +2392,833 @@
 // const bar = new Foo(); // bar is inferred to be of type string
 
 // ----------------------------------------------------------------------------------------
+
+// Type Assertion
+
+// TypeScript allows you to override its inferred and analyzed view of types in any way
+// you want to. This is done by a mechanism called "type assertion". TypeScript's type
+// assertion is purely you telling the compiler that you know about the types better
+// than it does, and that it should not second guess you.
+
+// A common use case for type assertion is when you are porting over code from
+// JavaScript to TypeScript. For example consider the following pattern:
+// var foo = {};
+// foo.bar = 123; // Error: property 'bar' does not exist on `{}`
+// foo.baz = 'hello'; // Error: property 'bas' does not exist on `{}`
+
+// Here the code errors because the inferred type of foo is {} i.e. an object
+// with zero properties. Therefore you are not allowed to add bar or bas to it.
+// You can fix this simply by a type assertion as Foo:
+// interface Foo {
+//     bar: number;
+//     baz: string;
+// }
+// var foo = {} as Foo;
+// foo.bar = 123;
+// foo.baz = 'john';
+
+// as foo vs. <foo>
+// Originally the syntax that was added was <foo>. This is demonstrated below:
+// var foo: any;
+// var bar = <string> foo; // bar is now of type "string"
+
+// However there is an ambiguity in the language grammar when using <foo> style
+// assertions in JSX:
+// var bar: any;
+// var foo = <string>bar;
+// </string>
+
+// Therefore it is now recommended that you just use as foo for consistency.
+
+// Type Assertion vs. Casting
+// The reason why it's not called "type casting" is that casting generally implies
+// some sort of runtime support. However type assertions are purely a compile time
+// construct and a way for you to provide hints to the compiler on how you want your
+// code to be analyzed.
+
+// Assertion considered harmful
+// In many cases assertion will allow you to easily migrate legacy code (and even
+// copy paste other code samples into your codebase), however you should be careful
+// with your use of assertions. Take our original code as a sample, the compiler will
+// not protect you from forgetting to actually add the properties you promised:
+// interface Foo {
+//   bar: number;
+//   bas: string;
+// }
+// var foo = {} as Foo;
+// // ahhhh .... forget something?
+
+// Also another common thought is using an assertion as a means of providing
+// autocomplete e.g.:
+// interface Foo {
+//   bar: number;
+//   bas: string;
+//   id: boolean;
+// }
+// var foo = <Foo>{
+//   // the compiler will provide autocomplete for properties of Foo
+//   // But it is easy for the developer to forget adding all the properties
+//   // Also this code is likely to break if Foo gets refactored (e.g. a new property added)
+//   // bar: 123,
+//   // bas: 'john'
+// };
+// console.log(foo.id);
+
+// but the hazard here is the same, if you forget a property the compiler will not
+// complain. It is better if you do the following:
+// interface Foo {
+//   bar: number;
+//   baz: string;
+// }
+// var foo:Foo = {
+// the compiler will provide autocomplete for properties of Foo
+//   // bar: 123,
+//   // baz: 'hello'
+// };
+// console.log(foo.bar, foo.baz);
+// In some cases you might need to create a temporary variable, but at least you will
+// not be making (possibly false) promises and instead relying on the type inference to do the checking for you.
+
+// Double assertion
+// The type assertion, despite being a bit unsafe as we've shown, is not completely
+// open season. E.g. the following is a very valid use case (e.g. the user thinks the
+// event passed in will be a more specific case of an event) and the type assertion
+// works as expected:
+// function handler(event: Event) {
+//   let mouseEvent = event as MouseEvent;
+// }
+
+// However the following is most likely an error and TypeScript will complain as shown
+// despite the user's type assertion:
+// function handler(event: Event) {
+//   let element = event as HTMLElement; // Error: Neither 'Event' nor type 'HTMLElement' is assignable to the other
+// }
+
+// If you still want that Type, you can use a double assertion, but first asserting
+// to any which is compatible with all types and therefore the compiler no longer complains:
+// function handler(event: Event) {
+//   let element = event as any as HTMLElement; // Okay!
+// }
+
+// How typescript determines if a single assertion is not enough
+// Basically, the assertion from type S to T succeeds if either S is a subtype of T or
+// T is a subtype of S. This is to provide extra safety when doing type assertions ...
+// completely wild assertions can be very unsafe and you need to use any to be that unsafe.
+
+// Freshness
+
+// TypeScript provides a concept of Freshness (also called strict object literal checking)
+// to make it easier to type check object literals that would otherwise be structurally
+// type compatible.
+
+// Structural typing is extremely convenient. Consider the following piece of code.
+// This allows you to very conveniently upgrade your JavaScript to TypeScript while
+// still preserving a level of type safety:
+// function logName(something: { name: string }) {
+//   console.log(something.name);
+// }
+
+// var person = { name: 'john', job: 'being awesome' };
+// var animal = { name: 'cow', diet: 'vegan, but has milk of own species' };
+// var random = { note: `I don't have a property` };
+// logName(person); // okay
+// logName(animal); // okay
+// logName(random); // Error: property `name` is missing
+
+// However structural typing has a weakness in that it allows you to misleadingly think
+// that something accepts more data than it actually does. This is demonstrated in the
+// following code which TypeScript will error on as shown:
+// function logName(something: { name: string }) {
+//   console.log(something.name);
+// }
+
+// logName({ name: 'matt' }); // okay
+// logName({ name: 'matt', job: 'being awesome' }); // Error: object literals must only specify known properties. `job` is excessive here.
+
+// Note that this error only happens on object literals. Without this error one might
+// look at the call logName({ name: 'matt', job: 'being awesome' }) and think that
+// logName would do something useful with job where as in reality it will completely
+// ignore it.
+
+// Another big use case is with interfaces that have optional members, without such
+// object literal checking, a typo would type check just fine. This is demonstrated below:
+// function logIfHasName(something: { name?: string }) {
+//   if (something.name) {
+//       console.log(something.name);
+//   }
+// }
+// var person = { name: 'matt', job: 'being awesome' };
+// var animal = { name: 'cow', diet: 'vegan, but has milk of own species' };
+
+// logIfHasName(person); // okay
+// logIfHasName(animal); // okay
+// logIfHasName({neme: 'I just misspelled name to neme'}); // Error: object literals must only specify known properties. `neme` is excessive here.
+
+// The reason why only object literals are type checked this way is because in this
+// case additional properties that aren't actually used is almost always a typo
+// or a misunderstanding of the API.
+
+// Allowing extra properties
+// A type can include an index signature to explicitly indicate that excess properties
+// are permitted:
+// var x: { foo: number, [x: string]: any };
+// x = { foo: 1, baz: 2 } // Ok, 'baz' matched by index signature
+// console.log(x.foo);
+// console.log(x.baz);
+
+// Use Case: React State
+// Facebook ReactJS offers a nice use case for object freshness. Quite commonly in a
+// component you call setState with only a few properties instead of passing in all
+// the properties, i.e.:
+
+// Assuming
+// interface State {
+//   foo: string;
+//   bar: string;
+// }
+
+// // You want to do:
+// this.setState({foo: "Hello"}); // Error: missing property bar
+
+// // But because state contains both `foo` and `bar` TypeScript would force you to do:
+// this.setState({foo: "Hello", bar: this.state.bar});
+
+// Using the idea of freshness you would mark all the members as optional and you still
+// get to catch typos!:
+// Assuming
+// interface State {
+//   foo?: string;
+//   bar?: string;
+// }
+// // You want to do:
+// this.setState({foo: "Hello"}); // Yay works fine!)
+
+// // Because of freshness it's protected against typos as well!
+// this.setState({foos: "Hello"}); // Error: Objects may only specify known properties
+
+// // And still type checked
+// this.setState({foo: 123}); // Error: Cannot assign number to a string
+
+// ----------------------------------------------------------------------------------------
+
+// Type Guard
+
+// Type Guards allow you to narrow down the type of an object within a conditional block.
+
+// typeof
+// TypeScript is aware of the usage of the JavaScript instanceof and typeof operators.
+// If you use these in a conditional block, TypeScript will understand the type of the
+// variable to be different within that conditional block. Here is a quick example where
+// TypeScript realizes that a particular function does not exist on string and points out
+// what was probably a user typo:
+// function doSomething(x: number|string) {
+//   if (typeof x === 'string') { // Within the block TypeScript knows that `x` must be a string
+//     console.log(x.subtr(1)); // Error, 'subtr' does not exist on `string`
+//     console.log(x.substr(1)); // OK
+//   }
+//   x.substr(1); // Error: There is no guarantee that `x` is a `string`
+// }
+
+// instanceof
+// Here is an example with a class and instanceof:
+
+// namespace FooBar {
+//   export class Foo {
+//     foo = 123;
+//     common = '123';
+//   }
+
+//   export class Bar {
+//     bar = 123;
+//     common = '123';
+//   }
+
+//   export function doStuff(arg: Foo | Bar) {
+//     if (arg instanceof Foo) {
+//       console.log(arg.foo); // OK
+//       console.log(arg.bar); // Error!
+//     }
+//     if (arg instanceof Bar) {
+//       console.log(arg.foo); // Error!
+//       console.log(arg.bar); // OK
+//     }
+
+//     console.log(arg.common); // OK
+//     console.log(arg.foo); // Error!
+//     console.log(arg.bar); // Error!
+//   }
+// }
+// FooBar.doStuff(new FooBar.Foo());
+// FooBar.doStuff(new FooBar.Bar());
+
+// TypeScript even understands else so when an if narrows out one type it knows that
+// within the else it's definitely not that type. Here is an example:
+// class Foo {
+//   foo = 123;
+// }
+
+// class Bar {
+//   bar = 123;
+// }
+
+// function doStuff(arg: Foo | Bar) {
+//   if (arg instanceof Foo) {
+//       console.log(arg.foo); // OK
+//       console.log(arg.bar); // Error!
+//   }
+//   else {  // MUST BE Bar!
+//       console.log(arg.foo); // Error!
+//       console.log(arg.bar); // OK
+//   }
+// }
+// doStuff(new Foo());
+// doStuff(new Bar());
+
+// in
+// The in operator does a safe check for the existance of a property on an object and
+// can be used as a type guard. E.g.
+// interface A {
+//   x: number;
+// }
+// interface B {
+//   y: string;
+// }
+// function doStuff(q: A | B) {
+//   if ('x' in q) {
+//     // q: A
+//     console.log('q: A');
+//   } else {
+//     // q: B
+//     console.log('q: B');
+//   }
+// }
+// let a: A = { x: 1 };
+// let b: B = { y: 'hello' };
+// doStuff(a);
+// doStuff(b);
+
+// Literal Type Guard
+// When you have literal types in a union you can check them to discriminate e.g.
+// type Foo = {
+//   kind: 'foo', // Literal type
+//   foo: number
+// }
+// type Bar = {
+//   kind: 'bar', // Literal type
+//   bar: number
+// }
+// function doStuff(arg: Foo | Bar) {
+//   if (arg.kind === 'foo') {
+//       console.log(arg.foo); // OK
+//       console.log(arg.bar); // Error!
+//   }
+//   else {  // MUST BE Bar!
+//       console.log(arg.foo); // Error!
+//       console.log(arg.bar); // OK
+//   }
+// }
+
+// User Defined Type Guards
+// JavaScript doesn't have very rich runtime introspection support built in. When you
+// are using just plain JavaScript Objects (using structural typing to your advantage),
+// you do not even have access to instanceof or typeof. For these cases you can create
+// User Defined Type Guard functions. These are just functions that return
+// someArgumentName is SomeType. Here is an example:
+// /**
+//  * Just some interfaces
+//  */
+// interface Foo {
+//   foo: number;
+//   common: string;
+// }
+
+// interface Bar {
+//   bar: number;
+//   common: string;
+// }
+
+// /**
+//  * User Defined Type Guard!
+//  */
+// function isFoo(arg: any): arg is Foo {
+//   return arg.foo !== undefined;
+// }
+
+// /**
+//  * Sample usage of the User Defined Type Guard
+//  */
+// function doStuff(arg: Foo | Bar) {
+//   if (isFoo(arg)) {
+//     console.log(arg.foo); // OK
+//     console.log(arg.bar); // Error!
+//   } else {
+//     console.log(arg.foo); // Error!
+//     console.log(arg.bar); // OK
+//   }
+// }
+// doStuff({ foo: 123, common: '123' });
+// doStuff({ bar: 123, common: '123' });
+
+// ----------------------------------------------------------------------------------------
+
+// Literals
+// Literals are exact values that are JavaScript primitives.
+
+// String Literals
+// You can use a string literal as a type. For example:
+// let foo: 'Hello';
+
+// Here we have created a variable called foo that will only allow the literal
+// value 'Hello' to be assigned to it. This is demonstrated below:
+// let foo: 'Hello';
+// foo = 'Bar'; // Error: "Bar" is not assignable to type "Hello"
+
+// They are not very useful on their own but can be combined in a type union to create
+// a powerful (and useful) abstraction e.g.:
+// type CardinalDirection =
+//   'North'
+//   | 'East'
+//   | 'South'
+//   | 'West'
+
+// function move(distance: number, direction: CardinalDirection) {
+//   // ...
+// }
+
+// move(1, 'North'); // OK
+// move(2, 'Nurth'); // Error
+
+// Other literal types
+// TypeScript also supports boolean and number literal types, e.g.:
+// type OneToFive = 1 | 2 | 3 | 4 | 5;
+// type Bool = true | false;
+
+// Inference
+// Quite commonly you get an error like Type string is not assignable to type "foo".
+// The following example demonstrates this.
+// function iTakeFoo(foo: 'foo') { }
+// const test = {
+//   someProp: 'foo'
+// };
+// iTakeFoo(test.someProp); // Error: Argument of type string is not assignable to parameter of type 'foo'
+
+// This is because test is inferred to be of type {someProp: string}. The fix here is to
+// use a simple type assertion to tell TypeScript the literal you want it to infer as
+// shown below:
+// function iTakeFoo(foo: 'foo') { }
+// const test = {
+//   someProp: 'foo' as 'foo'
+// };
+// iTakeFoo(test.someProp); // Okay!
+
+// Use cases
+
+// Valid use cases for string literal types are:
+// String based enums
+// TypeScript enums are number based. You can use string literals with union types to
+// mock a string based enum as we did in the CardinalDirection example above. You can
+// even generate a Key:Value structure using the following function:
+
+// And then generate the literal type union using keyof typeof. Here is a complete example:
+
+/** Utility function to create a K:V from a list of strings */
+// function strEnum<T extends string>(o: Array<T>): { [K in T]: K } {
+//   return o.reduce((res, key) => {
+//     res[key] = key;
+//     return res;
+//   }, Object.create(null));
+// }
+
+// /**
+//  * Sample create a string enum
+//  */
+
+// /** Create a K:V */
+// const Direction = strEnum(["North", "South", "East", "West"]);
+// /** Create a Type */
+// type Direction = keyof typeof Direction;
+
+// /**
+//  * Sample using a string enum
+//  */
+// let sample: Direction;
+
+// sample = Direction.North; // Okay
+// sample = "North"; // Okay
+// sample = "AnythingElse"; // ERROR!
+
+// Modelling existing JavaScript APIs
+
+// E.g. CodeMirror editor has an option readOnly that can either be a boolean or the
+// literal string "nocursor" (effective valid values true,false,"nocursor"). It can be
+// declared as:
+// let readOnly: boolean | 'nocursor';
+// readOnly = true; // OK
+// readOnly = 'nocursor'; // OK
+// readOnly = 'cursor'; // Error!
+
+// Discriminated Unions
+
+// We will cover this later in the book.
+
+// ----------------------------------------------------------------------------------------
+
+// readonly
+
+// TypeScript's type system allows you to mark individual properties on an interface
+// as readonly. This allows you to work in a functional way (unexpected mutation is bad):
+// function foo(config: {
+//   readonly bar: number,
+//   readonly baz: number
+// }) {
+//   // ...
+// }
+
+// let config = { bar: 123, baz: 234 };
+// foo(config);
+// You can be sure that `config` isn't changed 🌹
+
+// Of course you can use readonly in interface and type definitions as well e.g.:
+// type Foo = {
+//   readonly bar: number;
+//   readonly bas: number;
+// };
+
+// // Initialization is okay
+// let foo: Foo = { bar: 123, bas: 456 };
+
+// // Mutation is not
+// foo.bar = 456; // Error: Left-hand side of assignment expression cannot be a constant or a read-only property
+
+// You can even declare a class property as readonly. You can initialize them at the
+// point of declaration or in the constructor as shown below:
+// class Foo {
+//   readonly bar = 1; // OK
+//   readonly baz: string;
+//   constructor() {
+//     this.baz = 'hello'; // OK
+//     this.bar = 2; // Error!
+//   }
+// }
+
+// Readonly
+// There is a type Readonly that takes a type T and marks all of its properties as
+// readonly using mapped types. Here is a demo that uses it in practice:
+// type Foo = {
+//   bar: number;
+//   baz: number;
+// }
+// type FooReadonly = Readonly<Foo>;
+// let foo: Foo = { bar: 123, baz: 456 };
+// let fooReadonly: FooReadonly = { bar: 123, baz: 456 };
+
+// foo.bar = 456; // OK
+// fooReadonly.bar = 456; // Error: bar is readonly
+
+// Various Use Cases
+
+// ReactJS
+// One library that loves immutability is ReactJS, you could mark your Props and State
+// to be immutable e.g.:
+// interface Props {
+//   readonly foo: number;
+// }
+// interface State {
+//   readonly bar: number;
+// }
+// export class Something extends React.Component<Props, State> {
+//   someMethod() {
+//     // You can rest assured no one is going to do
+//     this.props.foo = 123; // ERROR: (props are immutable)
+//     this.state.baz = 456; // ERROR: (one should use this.setState)
+//   }
+// }
+
+// You do not need to, however, as the type definitions for React mark these as
+// readonly already (by internally wrapping the passed in generic types with the
+// Readonly type mentioned above).
+// export class Something extends React.Component<
+//   { foo: number },
+//   { baz: number }
+// > {
+//   // You can rest assured no one is going to do
+//   someMethod() {
+//     this.props.foo = 123; // ERROR: (props are immutable)
+//     this.state.baz = 456; // ERROR: (one should use this.setState)
+//   }
+// }
+
+// Seamless Immutable
+// You can even mark index signatures as readonly:
+
+// /**
+//  * Declaration
+//  */
+// interface Foo {
+//   readonly[x: number]: number;
+// }
+
+// /**
+// * Usage
+// */
+// let foo: Foo = { 0: 123, 2: 345 };
+// console.log(foo[0]);   // Okay (reading)
+// foo[0] = 456;          // Error (mutating): Readonly
+
+// This is great if you want to use native JavaScript arrays in an immutable fashion.
+// In fact TypeScript ships with a ReadonlyArray<T> interface to allow you to do just that:
+// let foo: ReadonlyArray<number> = [1, 2, 3];
+// console.log(foo[0]); // OK
+// foo.push(4); // Error: `push` does not exist on ReadonlyArray as it mutates the array
+// foo = foo.concat([4]); // Okay: create a copy
+
+// Automatic Inference
+
+// In some cases the compiler can automatically infer a particular item to be
+// readonly e.g. within a class if you have a property that only has a getter but
+// no setter, it is assumed readonly e.g.:
+// class Person {
+//   firstName: string = 'John';
+//   lastName: string = 'Doe';
+//   get fullName() {
+//     return this.firstName + this.lastName;
+//   }
+// }
+
+// const person = new Person();
+// console.log(person.fullName); // JohnDoe
+// person.fullName = 'Dear Reader'; // Error! fullName is readonly
+
+// Difference from const
+// const
+// 1. is for a variable reference
+// 2. the variable cannot be reassigned to anything else.
+
+// readonly is
+// 1. for a property
+// 2. the property can be modified because of aliasing
+
+// Sample explaining 1:
+// const foo = 123; // variable reference
+// var bar: {
+//     readonly bar: number; // for property
+// }
+
+// Sample explaining 2:
+// let foo: {
+//   readonly bar: number;
+// } = {
+//   bar: 123
+// };
+
+// function iMutateFoo(foo: { bar: number }) {
+//   foo.bar = 456;
+// }
+
+// iMutateFoo(foo); // The foo argument is aliased by the foo parameter
+// console.log(foo.bar); // 456!
+
+// Basically readonly ensures that a property cannot be modified by me, but if you
+// give it to someone that doesn't have that guarantee (allowed for type compatibility
+// reasons) they can modify it. Of course if iMutateFoo said that they do not mutate
+// foo.bar the compiler would correctly flag it as an error as shown:
+// interface Foo {
+//   readonly bar: number;
+// }
+// let foo: Foo = {
+//   bar: 123
+// };
+
+// function iTakeFoo(foo: Foo) {
+//   foo.bar = 456; // Error! bar is readonly
+// }
+
+// iTakeFoo(foo); // The foo argument is aliased by the foo parameter
+
+// ----------------------------------------------------------------------------------------
+
+// Generics
+// The key motivation for generics is to provide meaningful type constraints between members. The members can be:
+// - Class instance members
+// - Class methods
+// - function arguments
+// - function return value
+
+// Motivation and samples
+// Consider the simple Queue (first in, first out) data structure implementation.
+// A simple one in TypeScript / JavaScript looks like:
+// class Queue {
+//   private data = [];
+//   push = (item) => this.data.push(item);
+//   pop = () => this.data.shift();
+// }
+// One issue with this implementation is that it allows people to add anything to the
+// queue and when they pop it - it can be anything. This is shown below, where someone
+// can push a string onto the queue while the usage actually assumes that only numbers
+// were pushed in:
+
+// class Queue {
+//   private data = [];
+//   push = (item) => this.data.push(item);
+//   pop = () => this.data.shift();
+//   // get iwant() {
+//   //   return this.data;
+//   // }
+// }
+
+// const queue = new Queue();
+// queue.push(0);
+// queue.push(1); // Oops a mistake
+// queue.push('2'); // Oops a mistake
+// // console.log(queue.iwant);
+
+// // a developer walks into a bar
+// console.log(queue.pop().toPrecision(1));
+// console.log(queue.pop().toPrecision(1));
+// console.log(queue.pop().toPrecision(1)); // RUNTIME ERROR
+
+// One solution (and in fact the only one in languages that don't support generics) is
+// to go ahead and create special classes just for these constraints. E.g. a quick and
+// dirty number queue:
+// class QueueNumber {
+//   private data = [];
+//   push = (item: number) => this.data.push(item);
+//   pop = (): number => this.data.shift();
+// }
+
+// const queue = new QueueNumber();
+// queue.push(0);
+// queue.push("1"); // ERROR : cannot push a string. Only numbers allowed
+
+// // ^ if that error is fixed the rest would be fine too
+
+// Of course this can quickly become painful e.g. if you want a string queue you have
+// to go through all that effort again. What you really want is a way to say that
+// whatever the type is of the stuff getting pushed it should be the same for whatever
+// gets popped. This is done easily with a generic parameter (in this case, at the class
+// level):
+
+/** A class definition with a generic parameter */
+// class Queue<T> {
+//   private data = [];
+//   push = (item: T) => this.data.push(item);
+//   pop = (): T => this.data.shift();
+// }
+
+// /** Again sample usage */
+// const queue = new Queue<number>();
+// queue.push(0);
+// queue.push('1'); // ERROR : cannot push a string. Only numbers allowed
+
+// const queueString = new Queue<string>();
+// queueString.push('1');
+// queueString.push(2);
+
+// ^ if that error is fixed the rest would be fine too
+
+// Another example that we have already seen is that of a reverse function, here the
+// constraint is between what gets passed into the function and what the function returns:
+// function reverse<T>(items: T[]): T[] {
+//   var toreturn = [];
+//   for (let i = items.length - 1; i >= 0; i--) {
+//       toreturn.push(items[i]);
+//   }
+//   return toreturn;
+// }
+
+// var sample = [1, 2, 3];
+// var reversed = reverse(sample);
+// console.log(reversed); // 3,2,1
+
+// // Safety!
+// reversed[0] = '1';     // Error!
+// reversed = ['1', '2']; // Error!
+
+// reversed[0] = 1;       // Okay
+// reversed = [1, 2];     // Okay
+
+// In this section you have seen examples of generics being defined at class level
+// and at function level. One minor addition worth mentioning is that you can have
+// generics created just for a member function. As a toy example consider the
+// following where we move the reverse function into a Utility class:
+
+// class Utility {
+//   reverse<T>(items: T[]): T[] {
+//     var toreturn = [];
+//     for (let i = items.length - 1; i >= 0; i--) {
+//       toreturn.push(items[i]);
+//     }
+//     return toreturn;
+//   }
+// }
+
+// TIP: You can call the generic parameter whatever you want. It is conventional to
+// use T, U, V when you have simple generics. If you have more than one generic argument
+// try to use meaningful names e.g. TKey and TValue (conventional to prefix with T as
+// generics are also called templates in other languages e.g. C++).
+
+// Useless Generic
+// I've seen people use generics just for the heck of it. The question to ask is what
+// constraint are you trying to describe. If you can't answer it easily you might have
+// a useless generic. E.g. the following function
+
+// declare function foo<T>(arg: T): void;
+
+// Here the generic T is completely useless as it is only used in a single argument
+// position. It might as well be:
+
+// declare function foo(arg: any): void;
+
+// Design Pattern: Convenience generic
+// Consider the function:
+
+// declare function parse<T>(name: string): T;
+
+// In this case you can see that the type T is only used in one place. So there is no
+// constraint between members. This is equivalent to a type assertion in terms of type
+// safety:
+
+// declare function parse(name: string): any;
+
+// const something = parse('something') as TypeOfSomething;
+
+// Generics used only once are no better than an assertion in terms of type safety.
+// That said they do provide convenience to your API.
+
+// A more obvious example is a function that loads a json response. It returns a
+// promise of whatever type you pass in:
+
+// const getJson = <T>(config: {
+//   url: string;
+//   headers?: { [key: string]: string };
+// }): Promise<T> => {
+//   const fetchConfig = {
+//     method: "GET",
+//     Accept: "application/json",
+//     "Content-Type": "application/json",
+//     ...(config.headers || {})
+//   };
+//   return fetch(config.url, fetchConfig).then<T>(response => response.json());
+// };
+
+// Note that you still have to explicitly annotate what you want, but the
+// getJSON<T> signature (config) => Promise<T> saves you a few key strokes (you
+// don't need to annotate the return type of loadUsers as it can be inferred):
+
+// type LoadUsersResponse = {
+//   users: {
+//     name: string;
+//     email: string;
+//   }[]; // array of user objects
+// };
+
+// function loadUsers() {
+//   return getJson<LoadUsersResponse>({ url: "https://example.com/users" });
+// }
+
+// Also Promise<T> as a return value is definitely better than alternatives
+// like Promise<any>.
+
+// ----------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------
