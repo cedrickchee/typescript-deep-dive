@@ -3221,4 +3221,705 @@
 
 // ----------------------------------------------------------------------------------------
 
+// Type Inference in TypeScript
+
+// TypeScript can infer (and then check) the type of a variable based on a few simple
+// rules. Because these rules are simple you can train your brain to recognize
+// safe / unsafe code (it happened for me and my teammates quite quickly).
+
+// Variable Definition
+// Types of a variable are inferred by definition.
+// let foo = 123; // foo is a `number`
+// let bar = "Hello"; // bar is a `string`
+// foo = bar; // Error: cannot assign `string` to a `number`
+
+// This is an example of types flowing from right to left.
+
+// Function Return Types
+// The return type is inferred by the return statements e.g. the following function
+// is inferred to return a number.
+// function add(a: number, b: number) {
+//   return a + b;
+// }
+
+// Assignment
+// The type of function parameters / return values can also be inferred by assignment
+// e.g. here we say that foo is an Adder, that makes number the type of a and b.
+// type Adder = (a: number, b: number) => number;
+// let foo: Adder = (a, b) => a + b;
+
+// This fact can be demonstrated by the below code which raises an error as you would hope:
+// type Adder = (a: number, b: number) => number;
+// let foo: Adder = (a, b) => {
+//   a = "hello"; // Error: cannot assign `string` to a `number`
+//   return a + b;
+// };
+
+// This is an example of types flowing from left to right.
+// The same assignment style type inference works if you create a function for a
+// callback argument. After all an argument -> parameteris just another form of
+// variable assignment.
+// type Adder = (a: number, b: number) => number;
+// function iTakeAnAdder(adder: Adder) {
+//     return adder(1, 2);
+// }
+// iTakeAnAdder((a, b) => {
+//     a = "hello"; // Would Error: cannot assign `string` to a `number`
+//     return a + b;
+// });
+
+// Structuring
+// These simple rules also work in the presence of structuring (object literal creation).
+// For example in the following case the type of foo is inferred to be {a:number, b:number}
+// let foo = {
+//   a: 123,
+//   b: 456
+// };
+// foo.a = "hello"; // Would Error: cannot assign `string` to a `number`
+
+// Similarly for arrays:
+// const bar = [1,2,3];
+// bar[0] = "hello"; // Would error: cannot assign `string` to a `number`
+
+// And of course any nesting:
+// let foo = {
+//   bar: [1, 3, 4]
+// };
+// foo.bar[0] = 'hello'; // Would error: cannot assign `string` to a `number`
+
+// Destructuring
+// And of course, they also work with destructuring, both objects:
+// let foo = {
+//   a: 123,
+//   b: 456
+// };
+// let {a} = foo;
+// a = "hello"; // Would Error: cannot assign `string` to a `number`
+
+// and arrays:
+// const bar = [1, 2];
+// let [a, b] = bar;
+// a = "hello"; // Would Error: cannot assign `string` to a `number`
+
+// And if the function parameter can be inferred, so can its destructured properties.
+// For example here we destructure the argument into its a/b members.
+// type Adder = (numbers: { a: number, b: number }) => number;
+// function iTakeAnAdder(adder: Adder) {
+//     return adder({ a: 1, b: 2 });
+// }
+// iTakeAnAdder(({a, b}) => { // Types of `a` and `b` are inferred
+//     a = "hello"; // Would Error: cannot assign `string` to a `number`
+//     return a + b;
+// });
+
+// Type Guards
+// We have already seen how Type Guards help change and narrow down types (particularly
+// in the case of unions). Type guards are just another form of type inference for a
+// variable in a block.
+
+// Warnings
+
+// Be careful around parameters
+
+// Types do not flow into the function parameters if it cannot be inferred from an
+// assignment. For example in the following case the compiler does not know the type
+// of foo so it cannot infer the type of a or b.
+
+// const foo = (a,b) => { /* do something */ };
+
+// However if foo was typed the function parameters type can be inferred (a,b are both
+// inferred to be of type number in the example below).
+// type TwoNumberFunction = (a: number, b: number) => void;
+// const foo: TwoNumberFunction = (a, b) => { /* do something */ };
+
+// Be careful around return
+// Although TypeScript can generally infer the return type of a function, it might
+// not be what you expect. For example here function foo has a return type of any.
+// function foo(a: number, b: number) {
+//   return a + addOne(b);
+// }
+// Some external function in a library someone wrote in JavaScript
+// function addOne(a) {
+//   return a + 1;
+// }
+
+// This is because the return type is impacted by the poor type definition for
+// addOne (a is any so the return of addOne is any so the return of foo is any).
+
+// There are other cases that one can imagine, but the good news is that there is a
+// compiler flag that can help catch such bugs.
+
+// noImplicitAny
+// The flag noImplicitAny instructs the compiler to raise an error if it cannot infer
+// the type of a variable (and therefore can only have it as an implicit any type).
+// You can then
+// - either say that yes I want it to be of type any by explicitly adding an : any
+// type annotation
+// - help the compiler out by adding a few more correct annotations.
+
+// ----------------------------------------------------------------------------------------
+
+// Type Compatibility
+
+// Type Compatibility (as we discuss here) determines if one thing can be assigned to
+// another. E.g. string and number are not compatible:
+
+// let str: string = "Hello";
+// let num: number = 123;
+
+// str = num; // ERROR: `number` is not assignable to `string`
+// num = str; // ERROR: `string` is not assignable to `number`
+
+// Soundness
+// TypeScript's type system is designed to be convenient and allows for unsound
+// behaviours e.g. anything can be assigned to any which means telling the compiler
+// to allow you to do whatever you want:
+// let foo: any = 123;
+// foo = "Hello";
+
+// // Later
+// foo.toPrecision(3); // Allowed as you typed it as `any`
+
+// Structural
+// TypeScript objects are structurally typed. This means the names don't matter as long as the structures match
+// interface Point {
+//   x: number,
+//   y: number
+// }
+
+// class Point2D {
+//   constructor(public x:number, public y:number){}
+// }
+
+// let p: Point;
+// // OK, because of structural typing
+// p = new Point2D(1, 2);
+
+// This allows you to create objects on the fly (like you do in vanilla JS) and still have safety whenever it can be inferred.
+
+// Also more data is considered fine:
+// interface Point2D {
+//   x: number;
+//   y: number;
+// }
+// interface Point3D {
+//   x: number;
+//   y: number;
+//   z: number;
+// }
+// var point2D: Point2D = { x: 0, y: 10 }
+// var point3D: Point3D = { x: 0, y: 10, z: 20 }
+// function iTakePoint2D(point: Point2D) { /* do something */ }
+
+// iTakePoint2D(point2D); // exact match okay
+// iTakePoint2D(point3D); // extra information okay
+// iTakePoint2D({ x: 0 }); // Error: missing information `y`
+
+// Variance
+
+// Variance is an easy to understand and important concept for type compatibility analysis.
+// For simple types Base and Child, if Child is a child of Base, then instances of Child can be assigned to a variable of type Base.
+// This is polymorphism 101
+// In type compatibility of complex types composed of such Base and Child types depends on where the Base and Child in similar scenarios is driven by variance.
+// - Covariant : (co aka joint) only in same direction
+// - Contravariant : (contra aka negative) only in opposite direction
+// - Bivariant : (bi aka both) both co and contra.
+// - Invariant : if the types aren't exactly the same then they are incompatible.
+// Note: For a completely sound type system in the presence of mutable data like JavaScript, invariant is the only valid option. But as mentioned convenience forces us to make unsound choices.
+
+// Functions
+// There are a few subtle things to consider when comparing two functions.
+// Return Type
+// covariant: The return type must contain at least enough data.
+/** Type Hierarchy */
+// interface Point2D { x: number; y: number; }
+// interface Point3D { x: number; y: number; z: number; }
+
+// /** Two sample functions */
+// let iMakePoint2D = (): Point2D => ({ x: 0, y: 0 });
+// let iMakePoint3D = (): Point3D => ({ x: 0, y: 0, z: 0 });
+
+// /** Assignment */
+// iMakePoint2D = iMakePoint3D; // Okay
+// iMakePoint3D = iMakePoint2D; // ERROR: Point2D is not assignable to Point3D
+
+// Number of arguments
+// Fewer arguments are okay (i.e. functions can choose to ignore additional parameters). After all you are guaranteed to be called with at least enough arguments.
+
+// let iTakeSomethingAndPassItAnErr
+//     = (x: (err: Error, data: any) => void) => { /* do something */ };
+
+// iTakeSomethingAndPassItAnErr(() => null) // Okay
+// iTakeSomethingAndPassItAnErr((err) => null) // Okay
+// iTakeSomethingAndPassItAnErr((err, data) => null) // Okay
+
+// // ERROR: Argument of type '(err: any, data: any, more: any) => null' is not assignable to parameter of type '(err: Error, data: any) => void'.
+// iTakeSomethingAndPassItAnErr((err, data, more) => null);
+
+// Optional and Rest Parameters
+// Optional (pre determined count) and Rest parameters (any count of arguments) are compatible, again for convenience.
+// let foo = (x:number, y: number) => { /* do something */ }
+// let bar = (x?:number, y?: number) => { /* do something */ }
+// let bas = (...args: number[]) => { /* do something */ }
+
+// foo = bar = bas;
+// bas = bar = foo;
+
+// > Note: optional (in our example bar) and non optional (in our example foo) are only compatible if strictNullChecks is false.
+
+// Types of arguments
+// bivariant : This is designed to support common event handling scenarios
+/** Event Hierarchy */
+// interface Event { timestamp: number; }
+// interface MouseEvent extends Event { x: number; y: number }
+// interface KeyEvent extends Event { keyCode: number }
+
+// /** Sample event listener */
+// enum EventType { Mouse, Keyboard }
+// function addEventListener(eventType: EventType, handler: (n: Event) => void) {
+//     /* ... */
+// }
+
+// // Unsound, but useful and common. Works as function argument comparison is bivariant
+// addEventListener(EventType.Mouse, (e: MouseEvent) => console.log(e.x + "," + e.y));
+
+// // Undesirable alternatives in presence of soundness
+// addEventListener(EventType.Mouse, (e: Event) => console.log((<MouseEvent>e).x + "," + (<MouseEvent>e).y));
+// addEventListener(EventType.Mouse, <(e: Event) => void>((e: MouseEvent) => console.log(e.x + "," + e.y)));
+
+// // Still disallowed (clear error). Type safety enforced for wholly incompatible types
+// addEventListener(EventType.Mouse, (e: number) => console.log(e));
+
+// Also makes Array<Child> assignable to Array<Base> (covariance) as the functions are compatible.
+// Array covariance requires all Array<Child> functions to be assignable to Array<Base> e.g. push(t:Child)
+// is assignable to push(t:Base) which is made possible by function argument bivariance.
+
+// This can be confusing for people coming from other languages who would expect the following to error but will not in TypeScript:
+
+/** Type Hierarchy */
+// interface Point2D { x: number; y: number; }
+// interface Point3D { x: number; y: number; z: number; }
+
+// /** Two sample functions */
+// let iTakePoint2D = (point: Point2D) => { /* do something */ }
+// let iTakePoint3D = (point: Point3D) => { /* do something */ }
+
+// iTakePoint3D = iTakePoint2D; // Okay : Reasonable
+// iTakePoint2D = iTakePoint3D; // Okay : WHAT
+
+// Enums
+// Enums are compatible with numbers, and numbers are compatible with enums.
+// enum Status { Ready, Waiting };
+
+// let status1 = Status.Ready;
+// let num = 0;
+
+// status1 = num; // OKAY
+// num = status1; // OKAY
+
+// Enum values from different enum types are considered incompatible. This makes enums useable nominally (as opposed to structurally)
+// enum Status { Ready, Waiting };
+// enum Color { Red, Blue, Green };
+
+// let status1 = Status.Ready;
+// let color = Color.Red;
+
+// status1 = color; // ERROR
+
+// Classes
+// Only instance members and methods are compared. constructors and statics play no part.
+// class Animal {
+//   feet: number;
+//   constructor(name: string, numFeet: number) { /** do something */ }
+// }
+
+// class Size {
+//   feet: number;
+//   constructor(meters: number) { /** do something */ }
+// }
+
+// let a: Animal;
+// let s: Size;
+
+// a = s;  // OK
+// s = a;  // OK
+
+// private and protected members must originate from the same class. Such members essentially make the class nominal.
+
+/** A class hierarchy */
+// class Animal { protected feet: number; }
+// class Cat extends Animal { }
+
+// let animal: Animal;
+// let cat: Cat;
+
+// animal = cat; // OKAY
+// cat = animal; // OKAY
+
+// /** Looks just like Animal */
+// class Size { protected feet: number; }
+
+// let size: Size;
+
+// animal = size; // ERROR
+// size = animal; // ERROR
+
+// Generics
+// Since TypeScript has a structural type system, type parameters only affect compatibility when used by a member. For example, in the following T has no impact on compatibility:
+// interface Empty<T> {
+// }
+// let x: Empty<number>;
+// let y: Empty<string>;
+
+// x = y;  // okay, y matches structure of x
+
+// However if T is used, it will play a role in compatibility based on its instantiation as shown below:
+// interface NotEmpty<T> {
+//   data: T;
+// }
+// let x: NotEmpty<number>;
+// let y: NotEmpty<string>;
+
+// x = y;  // error, x and y are not compatible
+
+// In cases where generic arguments haven't been instantiated they are substituted by any before checking compatibility:
+// let identity = function<T>(x: T): T {
+//   // ...
+// }
+
+// let reverse = function<U>(y: U): U {
+//   // ...
+// }
+
+// identity = reverse;  // Okay because (x: any)=>any matches (y: any)=>any
+
+// Generics involving classes are matched by relevant class compatibility as mentioned before. e.g.
+// class List<T> {
+//   add(val: T) { }
+// }
+
+// class Animal { name: string; }
+// class Cat extends Animal { meow() { } }
+
+// const animals = new List<Animal>();
+// animals.add(new Animal()); // Okay
+// animals.add(new Cat()); // Okay
+
+// const cats = new List<Cat>();
+// cats.add(new Animal()); // Error
+// cats.add(new Cat()); // Okay
+
+// FootNote: Invariance
+// We said invariance is the only sound option. Here is an example where both contra and co variance are shown to be unsafe for arrays.
+// /** Hierarchy */
+// class Animal { constructor(public name: string){} }
+// class Cat extends Animal { meow() { } }
+
+// /** An item of each */
+// var animal = new Animal("animal");
+// var cat = new Cat("cat");
+
+// /**
+//  * Demo : polymorphism 101
+//  * Animal <= Cat
+//  */
+// animal = cat; // Okay
+// cat = animal; // ERROR: cat extends animal
+
+// /** Array of each to demonstrate variance */
+// let animalArr: Animal[] = [animal];
+// let catArr: Cat[] = [cat];
+
+// /**
+//  * Obviously Bad : Contravariance
+//  * Animal <= Cat
+//  * Animal[] >= Cat[]
+//  */
+// catArr = animalArr; // Okay if contravariant
+// catArr[0].meow(); // Allowed but BANG 🔫 at runtime
+
+
+// /**
+//  * Also Bad : covariance
+//  * Animal <= Cat
+//  * Animal[] <= Cat[]
+//  */
+// animalArr = catArr; // Okay if covariant
+// animalArr.push(new Animal('another animal')); // Just pushed an animal into catArr!
+// catArr.forEach(c => c.meow()); // Allowed but BANG 🔫 at runtime
+
+// ----------------------------------------------------------------------------------------
+
+// Never
+// Programming language design does have a concept of bottom type that is a
+// natural outcome as soon as you do code flow analysis. TypeScript does code
+// flow analysis (😎) and so it needs to reliably represent stuff that might never happen.
+
+// The never type is used in TypeScript to denote this bottom type. Cases when it occurs naturally:
+// - A function never returns (e.g. if the function body has while(true){})
+// - A function always throws (e.g. in function foo(){throw new Error('Not Implemented')} the return type of foo is never)
+
+// Of course you can use this annotation yourself as well
+// let foo: never; // Okay
+
+// However never can only ever be assigned to another never. e.g.
+// let foo: never = 123; // Error: Type number is not assignable to never
+
+// Okay as the function's return type is `never`
+// let bar: never = (() => { throw new Error('Throw my hands in the air like I just dont care') })();
+
+// Great. Now let's just jump into its key use case :)
+
+// Use case: Exhaustive Checks
+
+// You can call never functions in a never context.
+
+// function foo(x: string | number): boolean {
+//   if (typeof x === "string") {
+//     return true;
+//   } else if (typeof x === "number") {
+//     return false;
+//   }
+
+//   // Without a never type we would error :
+//   // - Not all code paths return a value (strict null checks)
+//   // - Or Unreachable code detected
+//   // But because typescript understands that `fail` function returns `never`
+//   // It can allow you to call it as you might be using it for runtime safety / exhaustive checks.
+//   return fail("Unexhaustive!");
+// }
+
+// function fail(message: string): never { throw new Error(message); }
+
+// And because never is only assignable to another never you can use it for compile time exhaustive
+// checks as well. This is covered in the discriminated union section.
+
+// Confusion with void
+// As soon as someone tells you that never is returned when a function never exits gracefully
+// you intuitively want to think of it as the same as void However void is a Unit. never is a falsum.
+
+// A function that returns nothing returns a Unit void. However a function that never
+// returns (or always throws) returns never. void is something that can be assigned (without
+// strictNullChecking) but never can never be assigned to anything other than never.
+
+// ----------------------------------------------------------------------------------------
+
+// Discriminated Union
+
+// If you have a class with a literal member then you can use that property to
+// discriminate between union members.
+
+// As an example consider the union of a Square and Rectangle, here we have a
+// member kind that exists on both union members and is of a particular literal type:
+// interface Square {
+//   kind: 'square';
+//   size: number
+// }
+
+// interface Rectangular {
+//   kind: 'rectangular',
+//   width: number;
+//   height: number;
+// }
+// type Shape = Square | Rectangular;
+// function area(s: Shape) {
+//   if (s.kind === 'square') {
+//     // Now TypeScript *knows* that `s` must be a square ;)
+//     // So you can use its members safely :)
+//     return s.size;
+//   } else {
+//     // Wasn't a square? So TypeScript will figure out that it must be a Rectangle ;)
+//     // So you can use its members safely :)
+//     return s.width * s.height;
+//   }
+// }
+
+// Exhaustive Checks
+
+// Quite commonly you want to make sure that all members of a union have some code(action) against them.
+// interface Square {
+//   kind: "square";
+//   size: number;
+// }
+
+// interface Rectangle {
+//   kind: "rectangle";
+//   width: number;
+//   height: number;
+// }
+// // Someone just added this new `Circle` Type
+// // We would like to let TypeScript give an error at any place that *needs* to cater for this
+// interface Circle {
+//   kind: 'circle';
+//   radius: number;
+// }
+// type Shape = Square | Rectangle | Circle;
+
+// As an example of where stuff goes bad:
+// function area(s: Shape) {
+//   if (s.kind === 'square') {
+//     return s.size * s.size;
+//   } else if (s.kind === 'rectangle') {
+//     return s.width * s.height;
+//   }
+//   // Would it be great if you could get TypeScript to give you an error?
+// }
+
+// You can do that by simply adding a fall through and making sure that the inferred type
+// in that block is compatible with the never type. For example if you add the exhaustive
+// check you get a nice error:
+// function area(s: Shape) {
+//   if (s.kind === 'square') {
+//     return s.size * s.size;
+//   } else if (s.kind === 'rectangle') {
+//     return s.width * s.height;
+//   } else {
+//     // ERROR : `Circle` is not assignable to `never`
+//     const _exhaustiveCheck: never = s;
+//   }
+// }
+
+// That forces you to handle this new case :
+// function area(s: Shape) {
+//   if (s.kind === 'square') {
+//     return s.size * s.size;
+//   } else if (s.kind === 'rectangle') {
+//     return s.width * s.height;
+//   } else if (s.kind === 'circle') {
+//     return Math.PI * (s.radius **2);
+//   } else {
+//     // Okay once more
+//     const _exhaustiveCheck: never = s;
+//   }
+// }
+
+// Switch
+// TIP: of course you can also do it in a switch statement:
+// function area(s: Shape) {
+//   switch (s.kind) {
+//       case "square": return s.size * s.size;
+//       case "rectangle": return s.width * s.height;
+//       case "circle": return Math.PI * s.radius * s.radius;
+//       default: const _exhaustiveCheck: never = s;
+//   }
+// }
+
+// strictNullChecks
+// If using strictNullChecks and doing exhaustive checks you should return the
+// _exhaustiveCheck variable (of type never) as well, otherwise TypeScript
+// infers a possible return of undefined. So:
+// function area(s: Shape) {
+//   switch (s.kind) {
+//       case "square": return s.size * s.size;
+//       case "rectangle": return s.width * s.height;
+//       case "circle": return Math.PI * s.radius * s.radius;
+//       default:
+//         const _exhaustiveCheck: never = s;
+//         return _exhaustiveCheck;
+//   }
+// }
+
+// Redux
+// A popular library that makes use of this is redux.
+// Here is the gist of redux with TypeScript type annotations added:
+// import { createStore } from 'redux'
+
+// type Action
+//   = {
+//     type: 'INCREMENT'
+//   }
+//   | {
+//     type: 'DECREMENT'
+//   }
+
+/**
+ * This is a reducer, a pure function with (state, action) => state signature.
+ * It describes how an action transforms the state into the next state.
+ *
+ * The shape of the state is up to you: it can be a primitive, an array, an object,
+ * or even an Immutable.js data structure. The only important part is that you should
+ * not mutate the state object, but return a new object if the state changes.
+ *
+ * In this example, we use a `switch` statement and strings, but you can use a helper that
+ * follows a different convention (such as function maps) if it makes sense for your
+ * project.
+ */
+// function counter(state = 0, action: Action) {
+//   switch (action.type) {
+//   case 'INCREMENT':
+//     return state + 1
+//   case 'DECREMENT':
+//     return state - 1
+//   default:
+//     return state
+//   }
+// }
+
+// // Create a Redux store holding the state of your app.
+// // Its API is { subscribe, dispatch, getState }.
+// let store = createStore(counter)
+
+// // You can use subscribe() to update the UI in response to state changes.
+// // Normally you'd use a view binding library (e.g. React Redux) rather than subscribe() directly.
+// // However it can also be handy to persist the current state in the localStorage.
+
+// store.subscribe(() =>
+//   console.log(store.getState())
+// )
+
+// // The only way to mutate the internal state is to dispatch an action.
+// // The actions can be serialized, logged or stored and later replayed.
+// store.dispatch({ type: 'INCREMENT' })
+// // 1
+// store.dispatch({ type: 'INCREMENT' })
+// // 2
+// store.dispatch({ type: 'DECREMENT' })
+// // 1
+
+// Using it with TypeScript gives you safety against typo errors, increased
+// refactor-ability and self documenting code.
+
+// ----------------------------------------------------------------------------------------
+
+// Index Signatures
+
+// An Object in JavaScript (and hence TypeScript) can be accessed with a string
+// to hold a reference to any other JavaScript object.
+// Here is a quick example:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ----------------------------------------------------------------------------------------
