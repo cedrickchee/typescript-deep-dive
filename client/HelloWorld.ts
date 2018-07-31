@@ -4254,6 +4254,251 @@
 // This allows you to have stuff like string enums + constants quite easily,
 // as you just saw in the above example.
 
+// Exception Handling
+
+// JavaScript has an Error class that you can use for exceptions. You throw
+// an error with the throw keyword. You can catch it with a try / catch
+// block pair e.g.
+
+// try {
+//   throw new Error('Something bad happened');
+// } catch(e) {
+//   console.log(e);
+// }
+
+// Error Sub Types
+
+// Beyond the built in Error class there are a few additional built-in error
+// classes that inherit from Error that the JavaScript runtime can throw:
+
+// RangeError
+
+// Creates an instance representing an error that occurs when a numeric
+// variable or parameter is outside of its valid range.
+
+// Call console with too many arguments
+// console.log.apply(console, new Array(1000000000)); // RangeError: Invalid array length
+
+// ReferenceError
+// Creates an instance representing an error that occurs when de-referencing
+// an invalid reference. e.g.
+// 'use strict';
+// console.log(notValidVar); // ReferenceError: notValidVar is not defined
+
+// SyntaxError
+// Creates an instance representing a syntax error that occurs while parsing
+// code that isn't valid JavaScript.
+// 1***3; // SyntaxError: Unexpected token *
+
+// TypeError
+// Creates an instance representing an error that occurs when a variable or
+// parameter is not of a valid type.
+// ('1.2').toPrecision(1); // TypeError: '1.2'.toPrecision is not a function
+
+// URIError
+// Creates an instance representing an error that occurs when encodeURI()
+// or decodeURI() are passed invalid parameters.
+// decodeURI('%'); // URIError: URI malformed
+
+// Always use Error
+
+// Beginner JavaScript developers sometimes just throw raw strings e.g.
+// try {
+//   throw 'Something bad happened';
+// } catch(e) {
+//   console.log(e);
+// }
+
+// Don't do that. The fundamental benefit of Error objects is that they
+// automatically keep track of where they were built and originated with
+// the stack property.
+
+// Raw strings result in a very painful debugging experience and complicate
+// error analysis from logs.
+
+// You don't have to throw an error
+// It is okay to pass an Error object around. This is conventional in
+// Node.js callback style code which takes callbacks with the first argument
+// as an error object.
+// function myFunction(callback: (e?: Error)) {
+//   doSomething(function() {
+//     if(somethingWrong) {
+//       callback(new Error('This is an error'));
+//     } else {
+//       callback();
+//     }
+//   });
+// }
+
+// Exceptional cases
+// Exceptions should be exceptional is a common saying in computer science.
+// There are a few reasons why this is true for JavaScript (and TypeScript)
+// as well.
+
+// Unclear where it is thrown
+// Consider the following piece of code:
+// try {
+//   const foo = runTask1();
+//   const bar = runTask2();
+// } catch(e) {
+//   console.log('Error:', e);
+// }
+
+// The next developer cannot know which function might throw the error. The
+// person reviewing the code cannot know without reading the code for
+// task1 / task2 and other functions they might call etc.
+
+// Makes graceful handling hard
+// You can try to make it graceful with explicit catch around each thing that
+// might throw:
+// try {
+//   const foo = runTask1();
+// }
+// catch(e) {
+//   console.log('Error:', e);
+// }
+// try {
+//   const bar = runTasks2();
+// }
+// catch(e) {
+//   console.log('Error:', e);
+// }
+
+// But now if you need to pass stuff from the first task to the second one
+// the code becomes messy: (notice foo mutation requiring let + explicit need
+// for annotating it because it cannot be inferred from the return of runTask1):
+// let foo: number; // Notice use of `let` and explicit type annotation
+// try {
+//   foo = runTask1();
+// }
+// catch(e) {
+//   console.log('Error:', e);
+// }
+// try {
+//   const bar = runTask2(foo);
+// }
+// catch(e) {
+//   console.log('Error:', e);
+// }
+
+// Not well represented in the type system
+// Consider the function:
+// function validate(value: number) {
+//   if (value < 0 || value > 100) throw new Error("Invalid value");
+// }
+
+// Using Error for such cases is a bad idea as it is not represented in the
+// type definition for the validate function (which is
+// (value: number) => void). Instead a better way to create a validate method
+// would be:
+// function validate(value: number): { error?: string } {
+//   if (value < 0 || value > 100) return { error: 'Invalid value' };
+// }
+
+// And now its represented in the type system.
+// Unless you want to handle the error in a very generic (simple / catch-all
+// etc) way, don't throw an error.
+
+// ----------------------------------------------------------------------------
+
+// Mixins
+// TypeScript (and JavaScript) classes support strict single inheritance. So
+// you cannot do:
+// class User extends Tagged, Timestamped {
+//   // ERROR: no multiple inheritance
+// }
+
+// Another way of building up classes from reusable components is to build
+// them by combining simpler partial classes called mixins.
+
+// The idea is simple, instead of a class A extending class B to get its
+// functionality, function B takes class A and returns a new class with this
+// added functionality. Function B is a mixin.
+
+// > [A mixin is] a function that
+// 1. takes a constructor,
+// 2. creates a class that extends that constructor with new functionality
+// 3. returns the new class
+
+// A complete example
+
+// Needed for all mixins
+// type Constructor<T = {}> = new (...args: any[]) => T;
+
+////////////////////
+// Example mixins
+////////////////////
+
+// A mixin that adds a property
+// function Timestamped<TBase extends Constructor>(Base: TBase) {
+//   return class extends Base {
+//     timestamp = Date.now();
+//   }
+// }
+
+// a mixin that adds a property and methods
+// function Activatable<TBase extends Constructor>(Base: TBase) {
+//   return class extends Base {
+//     isActivated = false;
+
+//     activate() {
+//       this.isActivated = true;
+//     }
+
+//     deactivate() {
+//       this.isActivated = false;
+//     }
+//   }
+// }
+
+////////////////////
+// Usage to compose classes
+////////////////////
+
+// Simple class
+// class User {
+//   name = '';
+// }
+
+// User that is Timestamped
+// const TimestampedUser = Timestamped(User);
+
+// User that is Timestamped and Activatable
+// const TimestampedActivatableUser = Timestamped(Activatable(User));
+
+////////////////////
+// Using the composed classes
+////////////////////
+// const timestampedUserExample = new TimestampedUser();
+// console.log(timestampedUserExample.timestamp);
+
+// const timestampedActivatableUserExample = new TimestampedActivatableUser();
+// console.log(timestampedActivatableUserExample.timestamp);
+// console.log(timestampedActivatableUserExample.isActivated);
+
+// Let's decompose this example.
+
+// Take a constructor
+// Mixins take a class and extend it with new functionality. So we need to
+// define what is a constructor. Easy as:
+
+// Needed for all mixins
+// type Constructor<T = {}> = new (...args: any[]) => T;
+
+// Extend the class and return it
+
+// Pretty easy:
+// A mixin that adds a property
+// function Timestamped<TBase extends Constructor>(Base: TBase) {
+//   return class extends Base {
+//     timestamp = Date.now();
+//   };
+// }
+
+// And that is it 🌹
+
+
+
 
 
 
@@ -4261,6 +4506,39 @@
 
 
 // ----------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
