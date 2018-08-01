@@ -61,14 +61,14 @@
 // all things, TypeScript allows you to be explicit about what can and cannot
 // be assigned a null or undefined.
 // In strict null checking mode, null and undefined are different:
-let foo = undefined;
-foo = null; // NOT Okay
+// let foo = undefined;
+// foo = null; // NOT Okay
 
 // Let's say we have a Member interface:
-interface Member {
-  name: string;
-  age?: number;
-}
+// interface Member {
+//   name: string;
+//   age?: number;
+// }
 
 // Not every Member will provide their age, so age is an optional property,
 // meaning the value of age may or may not be undefined.
@@ -169,59 +169,3 @@ interface Member {
 // > Like all assertions, you are telling the compiler to trust you. The
 // > compiler will not complain even if the code doesn't actually always assign
 // > the property.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ----------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ----------------------------------------------------------------------------
