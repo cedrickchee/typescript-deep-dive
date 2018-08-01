@@ -6,7 +6,9 @@
         "outDir": "client/build",
         // "outFile": "client/build/app.js",
         "downlevelIteration": true,
-        "noLib": false
+        "noLib": false,
+        "noImplicitAny": true,
+        "strictNullChecks": true
     },
     "exclude": [
         "node_modules"
