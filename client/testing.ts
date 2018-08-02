@@ -57,29 +57,44 @@
 // Cypress is a great E2E testing tool. Here are a few great reasons to
 // consider it:
 
+// - Isolated installation possible.
+// - Ships with TypeScript definitions out of the box.
+// - Provides a nice interactive google chrome debug experience. This is very
+// similar to how UI devs mostly work manually.
+// - Has command - execution seperation which allows for more powerfull
+// debugging and test stability (more on this below).
+// - Has implicit assertions to provide more meaningful debug experience with
+// less brittle tests (more on this in the tips below).
+// - Provides the ability to mock out and observe backend XHRs easily without
+// changing your application code (more on this in the tips below).
 
+// Installation
 
+// Create an e2e directory and install cypress and its dependencies for
+// TypeScript transpiling:
 
+// $ mkdir e2e
+// $ cd e2e
+// $ npm init -y
+// $ npm install cypress webpack @cypress/webpack-preprocessor typescript ts-loader
 
+// Here are a few reasons for creating a separate e2e folder especially for cypress:
+// - Creating a separate directory or e2e makes it easier to isolate its
+// package.json dependencies from the rest of your project. This results in less
+// dependency conflicts.
+// - Testing frameworks have a habit of polluting the global namespace with stuff
+// like describe it expect. It is best to keep the e2e tsconfig.json and
+// node_modules in this special e2e folder to prevent global type definition
+// conflicts.
 
+// Setup TypeScript tsconfig.json e.g.
 
+// Do a first dry run of cypress to prime the cypress folder structure. The
+// Cypress IDE will open. You can close it after you see the welcome message.
+//
+// $ npx cypress open
 
+// Setup cypress for transpiling typescript by editing e2e/cypress/plugins/
+// index.js to match the following:
 
-
-
-// ----------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ----------------------------------------------------------------------------
+// Optionally add a few scripts to the e2e/package.json file:
