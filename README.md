@@ -4,7 +4,7 @@ This repo contains notes and exercises from my deep dive into TypeScript and I _
 
 **A little context**
 
-I am a polygot programmer. Over the 10+ years, I have written codes both professionally and as a hobby in many programming languages—from Ruby to JavaScript, Go, Java, and Python. My motivation of learning TypeScript is to improved code quality as I have been writing a lot of JavaScript code since 2013 in my role as a front-end developer, hybrid mobile app developer, and React Native mobile app developer.
+I am a polyglot programmer. Over the 10+ years, I have written codes both professionally and as a hobby in many programming languages—from Ruby to JavaScript, Go, Java, and Python. My motivation of learning TypeScript is to improved code quality as I have been writing a lot of JavaScript code since 2013 in my role as a front-end developer, hybrid mobile app developer, and React Native mobile app developer.
 
 ## What is TypeScript
 
